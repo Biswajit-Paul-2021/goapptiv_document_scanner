@@ -21,7 +21,7 @@ class MethodChannelGoapptivDocumentScanner
     if (Platform.isAndroid) {
       DeviceInfoPlugin plugin = DeviceInfoPlugin();
       AndroidDeviceInfo android = await plugin.androidInfo;
-      if ((android.version.sdkInt ?? 21) < 33) {
+      if (android.version.sdkInt < 33) {
         permissions.add(Permission.storage);
       }
     }
@@ -49,7 +49,7 @@ class MethodChannelGoapptivDocumentScanner
     if (Platform.isAndroid) {
       DeviceInfoPlugin plugin = DeviceInfoPlugin();
       AndroidDeviceInfo android = await plugin.androidInfo;
-      if ((android.version.sdkInt ?? 21) < 33) {
+      if (android.version.sdkInt < 33) {
         permissions.add(Permission.storage);
       } else {
         permissions.addAll([Permission.photos, Permission.videos]);
