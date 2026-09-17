@@ -18,10 +18,18 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   File? imageFile;
 
+  GoapptivDocumentScanner? goapptivDocumentScanner;
+
   @override
   void initState() {
     super.initState();
     // initPlatformState();
+  }
+
+  @override
+  void dispose() {
+    goapptivDocumentScanner?.closeScanner();
+    super.dispose();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method
@@ -41,18 +49,36 @@ class _MyAppState extends State<MyApp> {
               child: Center(
                 child: ElevatedButton(
                   onPressed: () async {
-                    try {
-                      final imagePath =
-                          await GoapptivDocumentScanner.getPicture(
-                        letUserCropImage: true,
+                    if (Platform.isAndroid) {
+                      final options = DocumentScannerOptions(
+                        documentFormat: DocumentFormat.jpeg,
+                        isGalleryImport: false,
+                        mode: ScannerMode.baseMode,
                       );
-                      if (imagePath != null) {
-                        log(imagePath);
-                        imageFile = File(imagePath);
+                      try {
+                        await goapptivDocumentScanner?.closeScanner();
+                        goapptivDocumentScanner = GoapptivDocumentScanner();
+                        final result = await goapptivDocumentScanner
+                            ?.scanDocument(options);
+                        imageFile = File(result!.images.first);
                         setState(() {});
+                      } on Exception catch (e) {
+                        print(e);
                       }
-                    } on Exception catch (e) {
-                      print(e);
+                    } else {
+                      try {
+                        final imagePath =
+                            await GoapptivDocumentScanner.getPicture(
+                          letUserCropImage: true,
+                        );
+                        if (imagePath != null) {
+                          log(imagePath);
+                          imageFile = File(imagePath);
+                          setState(() {});
+                        }
+                      } on Exception catch (e) {
+                        print(e);
+                      }
                     }
                   },
                   child: const Text('Camera'),
@@ -63,18 +89,36 @@ class _MyAppState extends State<MyApp> {
               child: Center(
                 child: ElevatedButton(
                   onPressed: () async {
-                    try {
-                      final imagePath =
-                          await GoapptivDocumentScanner.getPictureFromGallery(
-                        letUserCropImage: true,
+                    if (Platform.isAndroid) {
+                      final options = DocumentScannerOptions(
+                        documentFormat: DocumentFormat.jpeg,
+                        isGalleryImport: true,
+                        mode: ScannerMode.baseMode,
                       );
-                      if (imagePath != null) {
-                        log(imagePath);
-                        imageFile = File(imagePath);
+                      try {
+                        await goapptivDocumentScanner?.closeScanner();
+                        goapptivDocumentScanner = GoapptivDocumentScanner();
+                        final result = await goapptivDocumentScanner
+                            ?.scanDocument(options);
+                        imageFile = File(result!.images.first);
                         setState(() {});
+                      } on Exception catch (e) {
+                        print(e);
                       }
-                    } on Exception catch (e) {
-                      print(e);
+                    } else {
+                      try {
+                        final imagePath =
+                            await GoapptivDocumentScanner.getPictureFromGallery(
+                          letUserCropImage: true,
+                        );
+                        if (imagePath != null) {
+                          log(imagePath);
+                          imageFile = File(imagePath);
+                          setState(() {});
+                        }
+                      } on Exception catch (e) {
+                        print(e);
+                      }
                     }
                   },
                   child: const Text('Gallery'),

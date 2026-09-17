@@ -78,7 +78,7 @@ The plugin code is written in kotlin 2.1.20 so the same has to be set to the and
 Change the kotlin_version to 2.1.20 in your `android/build.gradle` file.
 
 ```
-ext.kotlin_version = '2.1.20'
+ext.kotlin_version = '2.3.20'
 ```
 
 Change the minimum Android SDK version to 21 (or higher) in your `android/app/build.gradle` file.
@@ -108,20 +108,44 @@ import 'package:goapptiv_document_scanner/goapptiv_document_scanner.dart';
 ```
 
 ```dart
-    // Use below code for taking image from camera.
-try {
-    //Make sure to await the call to GetPicture.
-    final imagePath = await GoapptivDocumentScanner.getPicture();
-} catch (e) {
+
+// Only require for Android to close the scanner for releasing the resources
+GoapptivDocumentScanner? goapptivDocumentScanner;
+
+  @override
+  void dispose() {
+    goapptivDocumentScanner?.closeScanner();
+    super.dispose();
+  }
+
+if (Platform.isAndroid) {
+  final options = DocumentScannerOptions(
+    documentFormat: DocumentFormat.pdf,
+    isGalleryImport: true,
+    mode: ScannerMode.baseMode,
+  );
+  try {
+    goapptivDocumentScanner?.closeScanner();
+    goapptivDocumentScanner = GoapptivDocumentScanner();
+    final result = await goapptivDocumentScanner?.scanDocument(options);
+    log(result.toString());
+  } on Exception catch (e) {
+      print(e);
+  }
+} else {
+  try {
+    final imagePath =
+    await GoapptivDocumentScanner.getPicture();
+    if (imagePath != null) {
+      log(imagePath);
+      imageFile = File(imagePath);
+      setState(() {});
+    }
+  } on Exception catch (e) {
     print(e);
+  }
 }
-// Use below code for selecting directly from the gallery.
-try {
-    //Make sure to await the call to getPictureFromGallery.
-    final imagePath = await GoapptivDocumentScanner.getPictureFromGallery();
-} catch (e) {
-    print(e);
-}
+
 ```
 
 ## Authors
