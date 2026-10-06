@@ -33,13 +33,21 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
     private static final String CLOSE = "vision#closeDocumentScanner";
     private static final String TAG = "DocumentScanner";
     private final Map<String, GmsDocumentScanner> instances = new HashMap<>();
-    private final ActivityPluginBinding binding;
+    private ActivityPluginBinding binding;
     final private int START_DOCUMENT_ACTIVITY = 0x362738;
     private MethodChannel.Result pendingResult = null;
 
-    public DocumentScanner(ActivityPluginBinding binding) {
+    public void attachToActivity(@NonNull ActivityPluginBinding binding) {
+        detachFromActivity();
         this.binding = binding;
         binding.addActivityResultListener(this);
+    }
+
+    public void detachFromActivity() {
+        if (binding != null) {
+            binding.removeActivityResultListener(this);
+            binding = null;
+        }
     }
 
     @Override
@@ -60,9 +68,18 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
     }
 
     private void handleScanner(MethodCall call, final MethodChannel.Result result) {
+        if (pendingResult != null) {
+            result.error(TAG, "Document scanner is already active", null);
+            return;
+        }
+        Activity activity = binding != null ? binding.getActivity() : null;
+        if (activity == null) {
+            result.error(TAG, "No activity available", null);
+            return;
+        }
+
         String id = call.argument("id");
         GmsDocumentScanner scanner = instances.get(id);
-        pendingResult = result;
 
         // Create a new scanner instance if it doesn't exist
         if (scanner == null) {
@@ -76,7 +93,7 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
             instances.put(id, scanner);
         }
 
-        Activity activity = binding.getActivity();
+        pendingResult = result;
         scanner.getStartScanIntent(activity)
                 .addOnSuccessListener(new OnSuccessListener<IntentSender>() {
                     @Override
@@ -85,13 +102,13 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
                             activity.startIntentSenderForResult(intentSender,
                                     START_DOCUMENT_ACTIVITY, null, 0, 0, 0);
                         } catch (IntentSender.SendIntentException e) {
-                            result.error(TAG, "Failed to start document scanner", null);
+                            finishWithError("Failed to start document scanner");
                         }
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        result.error(TAG, "Failed to start document scanner", null);
+                        finishWithError("Failed to start document scanner");
                     }
                 });
     }
@@ -150,24 +167,37 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
             resultMap.put("images", null);
         }
 
-        pendingResult.success(resultMap);
+        MethodChannel.Result callback = pendingResult;
+        pendingResult = null;
+        callback.success(resultMap);
+    }
+
+    private void finishWithError(String message) {
+        if (pendingResult == null) return;
+        MethodChannel.Result result = pendingResult;
+        pendingResult = null;
+        result.error(TAG, message, null);
     }
 
 
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent intent) {
         if (requestCode == START_DOCUMENT_ACTIVITY) {
+            // The caller may be gone, e.g. if the activity was recreated after process death
+            if (pendingResult == null) return true;
             if (resultCode == Activity.RESULT_OK) {
                 GmsDocumentScanningResult result =
                         GmsDocumentScanningResult.fromActivityResultIntent(
                         intent);
                 if (result != null) {
                     handleScanningResult(result);
+                } else {
+                    finishWithError("Invalid scan result");
                 }
             } else if (resultCode == Activity.RESULT_CANCELED) {
-                pendingResult.error(TAG, "Operation cancelled", null);
+                finishWithError("Operation cancelled");
             } else {
-                pendingResult.error(TAG, "Unknown Error", null);
+                finishWithError("Unknown Error");
             }
             return true;
         }

@@ -8,10 +8,12 @@ import io.flutter.plugin.common.MethodChannel
 
 class GoapptivDocumentScanner : FlutterPlugin, ActivityAware {
     private lateinit var channel: MethodChannel
+    private val scanner = DocumentScanner()
     val channelName: String = "goapptiv_document_scanner"
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, channelName)
+        channel.setMethodCallHandler(scanner)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -19,16 +21,18 @@ class GoapptivDocumentScanner : FlutterPlugin, ActivityAware {
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        channel.setMethodCallHandler(DocumentScanner(binding))
+        scanner.attachToActivity(binding)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        scanner.detachFromActivity()
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        channel.setMethodCallHandler(DocumentScanner(binding))
+        scanner.attachToActivity(binding)
     }
 
     override fun onDetachedFromActivity() {
+        scanner.detachFromActivity()
     }
 }
