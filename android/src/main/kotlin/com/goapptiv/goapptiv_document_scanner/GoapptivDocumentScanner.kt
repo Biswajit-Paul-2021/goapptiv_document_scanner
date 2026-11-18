@@ -8,11 +8,13 @@ import io.flutter.plugin.common.MethodChannel
 
 class GoapptivDocumentScanner : FlutterPlugin, ActivityAware {
     private lateinit var channel: MethodChannel
-    private val scanner = DocumentScanner()
+    // Created with the engine; the activity callbacks below only run while it is attached.
+    private lateinit var scanner: DocumentScanner
     val channelName: String = "goapptiv_document_scanner"
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, channelName)
+        scanner = DocumentScanner(flutterPluginBinding.applicationContext, channel)
         channel.setMethodCallHandler(scanner)
     }
 

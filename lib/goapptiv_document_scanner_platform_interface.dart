@@ -42,4 +42,8 @@ abstract class GoapptivDocumentScannerPlatform extends PlatformInterface {
   Future<void> closeScanner() {
     throw UnimplementedError('closeScanner() has not been implemented.');
   }
+
+  Stream<DocumentScanningResult> get recoveredScanResults {
+    throw UnimplementedError('recoveredScanResults has not been implemented.');
+  }
 }

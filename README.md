@@ -141,6 +141,33 @@ if (Platform.isAndroid) {
 
 ```
 
+### Recovering scans after Android kills the app
+
+On low-memory devices Android may kill the app while the scanner is open. When
+the user finishes scanning, the app restarts, and the `scanDocument()` call
+that was waiting can no longer complete. The plugin keeps the finished scan and
+delivers it through `recoveredScanResults` instead. Listen to it once the app
+has started; a scan stored before you listen is delivered as soon as you do.
+
+```dart
+late final StreamSubscription<DocumentScanningResult> recoveredScans;
+
+@override
+void initState() {
+  super.initState();
+  recoveredScans = goapptivDocumentScanner.recoveredScanResults.listen((result) {
+    // Same result as scanDocument() would have returned.
+    log(result.toString());
+  });
+}
+
+@override
+void dispose() {
+  recoveredScans.cancel();
+  super.dispose();
+}
+```
+
 ## Authors
 
 - [@BiswajitP](https://github.com/Biswajit-Paul-2021)

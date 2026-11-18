@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -21,10 +22,23 @@ class _MyAppState extends State<MyApp> {
   final GoapptivDocumentScanner goapptivDocumentScanner =
       GoapptivDocumentScanner();
 
+  StreamSubscription<DocumentScanningResult>? _recoveredScans;
+
   @override
   void initState() {
     super.initState();
-    // initPlatformState();
+    // Delivers a scan the user finished after Android killed the app.
+    _recoveredScans =
+        goapptivDocumentScanner.recoveredScanResults.listen((result) {
+      if (result.images.isEmpty) return;
+      setState(() => imageFile = File(result.images.first));
+    });
+  }
+
+  @override
+  void dispose() {
+    _recoveredScans?.cancel();
+    super.dispose();
   }
 
   // Platform messages are asynchronous, so we initialize in an async method
