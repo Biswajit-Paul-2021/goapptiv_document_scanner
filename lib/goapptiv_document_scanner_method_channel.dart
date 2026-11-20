@@ -69,8 +69,8 @@ class MethodChannelGoapptivDocumentScanner
   }
 
   @override
-  Future<DocumentScanningResult> scanDocument(
-      DocumentScannerOptions options) async {
+  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options,
+      {String? tag}) async {
     // Release the scanner kept for the previous scan so its options cannot
     // leak into this one.
     await closeScanner();
@@ -84,6 +84,7 @@ class MethodChannelGoapptivDocumentScanner
             'vision#startDocumentScanner', <String, dynamic>{
       'options': options.toJson(),
       'id': scannerId,
+      'tag': tag,
     });
     return DocumentScanningResult.fromJson(results);
   }

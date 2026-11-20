@@ -43,6 +43,7 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
     private static final String TAG = "DocumentScanner";
     private static final String PREFS_NAME = "goapptiv_document_scanner";
     private static final String KEY_LOST_RESULT = "lost_scan_result";
+    private static final String KEY_PENDING_TAG = "pending_scan_tag";
     private final Map<String, GmsDocumentScanner> instances = new HashMap<>();
     private final Context context;
     private final MethodChannel channel;
@@ -113,6 +114,17 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
             scanner = GmsDocumentScanning.getClient(scannerOptions);
             instances.put(id, scanner);
         }
+
+        // Written to disk, not kept in memory, so the tag still matches the scan
+        // if the system kills the app before the scan finishes.
+        String tag = call.argument("tag");
+        SharedPreferences.Editor editor = prefs().edit();
+        if (tag != null) {
+            editor.putString(KEY_PENDING_TAG, tag);
+        } else {
+            editor.remove(KEY_PENDING_TAG);
+        }
+        editor.commit();
 
         pendingResult = result;
         scanner.getStartScanIntent(activity)
@@ -187,7 +199,12 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
         } else {
             resultMap.put("images", null);
         }
+        resultMap.put("tag", prefs().getString(KEY_PENDING_TAG, null));
         return resultMap;
+    }
+
+    private void clearPendingTag() {
+        prefs().edit().remove(KEY_PENDING_TAG).commit();
     }
 
     private void handleScanningResult(GmsDocumentScanningResult result) {
@@ -247,6 +264,7 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
             Map<String, Object> resultMap = new HashMap<>();
             resultMap.put("pdf", pdfMap);
             resultMap.put("images", images.isEmpty() ? null : images);
+            resultMap.put("tag", stored.isNull("tag") ? null : stored.getString("tag"));
             return resultMap;
         } catch (JSONException e) {
             return null;
@@ -272,33 +290,41 @@ public class DocumentScanner implements MethodChannel.MethodCallHandler,
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent intent) {
         if (requestCode == START_DOCUMENT_ACTIVITY) {
-            if (pendingResult == null) {
-                // The Dart call that started this scan no longer exists, e.g. the
-                // app was killed while the scanner was open. Keep a finished scan
-                // so it can be delivered through recoveredScanResults.
-                if (resultCode == Activity.RESULT_OK) {
-                    GmsDocumentScanningResult result =
-                            GmsDocumentScanningResult.fromActivityResultIntent(intent);
-                    if (result != null) keepLostResult(result);
-                }
-                return true;
-            }
-            if (resultCode == Activity.RESULT_OK) {
-                GmsDocumentScanningResult result =
-                        GmsDocumentScanningResult.fromActivityResultIntent(
-                        intent);
-                if (result != null) {
-                    handleScanningResult(result);
-                } else {
-                    finishWithError("Invalid scan result");
-                }
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-                finishWithError("Operation cancelled");
-            } else {
-                finishWithError("Unknown Error");
+            try {
+                deliverActivityResult(resultCode, intent);
+            } finally {
+                // The scan is over either way; its tag is now in the result, if any.
+                clearPendingTag();
             }
             return true;
         }
         return false;
+    }
+
+    private void deliverActivityResult(int resultCode, @Nullable Intent intent) {
+        if (pendingResult == null) {
+            // The Dart call that started this scan no longer exists, e.g. the
+            // app was killed while the scanner was open. Keep a finished scan
+            // so it can be delivered through recoveredScanResults.
+            if (resultCode == Activity.RESULT_OK) {
+                GmsDocumentScanningResult result =
+                        GmsDocumentScanningResult.fromActivityResultIntent(intent);
+                if (result != null) keepLostResult(result);
+            }
+            return;
+        }
+        if (resultCode == Activity.RESULT_OK) {
+            GmsDocumentScanningResult result =
+                    GmsDocumentScanningResult.fromActivityResultIntent(intent);
+            if (result != null) {
+                handleScanningResult(result);
+            } else {
+                finishWithError("Invalid scan result");
+            }
+        } else if (resultCode == Activity.RESULT_CANCELED) {
+            finishWithError("Operation cancelled");
+        } else {
+            finishWithError("Unknown Error");
+        }
     }
 }

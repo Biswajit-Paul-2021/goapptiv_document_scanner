@@ -168,6 +168,29 @@ void dispose() {
 }
 ```
 
+A recovered scan has lost the context it was started from: the screen, bottom
+sheet or list item that asked for it. Pass a `tag` when scanning to know what it
+was for. The tag is saved with the scan and comes back as `result.tag`.
+
+```dart
+await goapptivDocumentScanner.scanDocument(options, tag: 'customer-proof:$customerId');
+
+goapptivDocumentScanner.recoveredScanResults.listen((result) {
+  final tag = result.tag;
+  if (tag != null && tag.startsWith('customer-proof:')) {
+    uploadProof(tag.substring('customer-proof:'.length), result.images.first);
+  }
+});
+```
+
+Listen in one place that is always on screen after the app restarts, such as
+the screen hosting the bottom navigation bar. Don't listen inside list items or
+bottom sheets: they may not be rebuilt, and each scan is delivered only to the
+listeners that exist when it arrives.
+
+To also return the user to the screen they were on, enable Flutter state
+restoration, e.g. `MaterialApp.router(restorationScopeId: 'app', ...)`.
+
 ## Authors
 
 - [@BiswajitP](https://github.com/Biswajit-Paul-2021)

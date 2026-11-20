@@ -94,6 +94,29 @@ void main() {
     expect(takeCalls, 0);
   });
 
+  test('returns the tag of a recovered scan', () async {
+    mockNativeStore({...storedScan, 'tag': 'customer-proof:42'});
+
+    final result = await platform.recoveredScanResults.first;
+
+    expect(result.tag, 'customer-proof:42');
+  });
+
+  test('sends the tag with the scan request and returns it', () async {
+    Object? sentTag;
+    messenger.setMockMethodCallHandler(channel, (MethodCall call) async {
+      if (call.method != 'vision#startDocumentScanner') return null;
+      sentTag = (call.arguments as Map)['tag'];
+      return {...storedScan, 'tag': sentTag};
+    });
+
+    final result = await platform.scanDocument(DocumentScannerOptions(),
+        tag: 'customer-proof:42');
+
+    expect(sentTag, 'customer-proof:42');
+    expect(result.tag, 'customer-proof:42');
+  });
+
   test('emits nothing on platforms that do not store lost scans', () async {
     // No mock handler, so the call fails with MissingPluginException, as on iOS.
     final results = <DocumentScanningResult>[];

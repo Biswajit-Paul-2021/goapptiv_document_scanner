@@ -25,8 +25,15 @@ class GoapptivDocumentScanner {
         .getPictureFromGallery(letUserCropImage: letUserCropImage);
   }
 
-  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options) {
-    return GoapptivDocumentScannerPlatform.instance.scanDocument(options);
+  /// Opens the document scanner and returns the scan.
+  ///
+  /// [tag] is any string you choose, such as a record id. It comes back as
+  /// [DocumentScanningResult.tag], including on scans delivered through
+  /// [recoveredScanResults], so you can tell what a recovered scan was for.
+  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options,
+      {String? tag}) {
+    return GoapptivDocumentScannerPlatform.instance
+        .scanDocument(options, tag: tag);
   }
 
   /// Scans that the user finished after Android had killed the app.
