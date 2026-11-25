@@ -13,7 +13,11 @@ A new flutter plugin project.
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Goapptiv' => 'BiswajitP' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*'
+  # Shared with the Swift package in goapptiv_document_scanner/.
+  s.source_files = 'goapptiv_document_scanner/Sources/goapptiv_document_scanner/**/*.swift'
+  s.resource_bundles = {
+    'goapptiv_document_scanner_privacy' => ['goapptiv_document_scanner/Sources/goapptiv_document_scanner/PrivacyInfo.xcprivacy']
+  }
   s.dependency 'Flutter'
   s.frameworks = 'AVFoundation', 'Vision', 'CoreImage'
 

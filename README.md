@@ -23,9 +23,11 @@ The plugin asks for camera access itself the first time the camera opens, so it 
 
 Picking from the gallery needs no photo library permission: the system photo picker runs outside your app and hands over only the photo the user picks.
 
-If you added `PERMISSION_CAMERA=1`, `PERMISSION_PHOTOS=1` or `NSPhotoLibraryUsageDescription` only for this plugin, you can remove them.
+The plugin no longer depends on `permission_handler`. If you added `PERMISSION_CAMERA=1`, `PERMISSION_PHOTOS=1` or `NSPhotoLibraryUsageDescription` only for this plugin, you can remove them.
 
-Xcode 27 only builds for iOS 15 and later, and reports an error for any pod that declares a lower minimum. Some Flutter versions, including 3.41, don't fix this up for every pod, such as resource bundles, such as `permission_handler_apple`'s. If you see "The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 15.0 to ...", extend the `post_install` block in your `ios/Podfile`:
+The plugin supports both Swift Package Manager and CocoaPods; Flutter picks whichever your app uses. It includes a privacy manifest declaring its use of `UserDefaults` (to remember the camera's Auto/Manual choice).
+
+Xcode 27 only builds for iOS 15 and later, and reports an error for any pod that declares a lower minimum. Some Flutter versions, including 3.41, don't fix this up for every pod, such as the resource bundles of other plugins' pods. If you see "The iOS deployment target 'IPHONEOS_DEPLOYMENT_TARGET' is set to 9.0, but the range of supported deployment target versions is 15.0 to ...", extend the `post_install` block in your `ios/Podfile`:
 
 ```ruby
 post_install do |installer|

@@ -2,7 +2,7 @@ import AVFoundation
 import Flutter
 import UIKit
 
-public class SwiftGoapptivDocumentScannerPlugin: NSObject, FlutterPlugin {
+public class GoapptivDocumentScannerPlugin: NSObject, FlutterPlugin {
 
     /// The Dart call waiting for the scan on screen. Only one scan runs at a time.
     private var pendingResult: FlutterResult?
@@ -12,7 +12,7 @@ public class SwiftGoapptivDocumentScannerPlugin: NSObject, FlutterPlugin {
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: Utils.channelName, binaryMessenger: registrar.messenger())
-        registrar.addMethodCallDelegate(SwiftGoapptivDocumentScannerPlugin(), channel: channel)
+        registrar.addMethodCallDelegate(GoapptivDocumentScannerPlugin(), channel: channel)
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -158,7 +158,7 @@ public class SwiftGoapptivDocumentScannerPlugin: NSObject, FlutterPlugin {
     }
 }
 
-extension SwiftGoapptivDocumentScannerPlugin: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+extension GoapptivDocumentScannerPlugin: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         close(returning: nil)

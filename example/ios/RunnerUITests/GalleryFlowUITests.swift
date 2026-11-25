@@ -106,7 +106,9 @@ final class GalleryFlowUITests: XCTestCase {
         openGallery()
         // The test photo is dated 25 November, which the picker puts in its label.
         let photo = app.images.matching(NSPredicate(format: "label CONTAINS '25 November'")).firstMatch
-        XCTAssertTrue(photo.waitForExistence(timeout: 15), "Test photo not found in the picker")
+        // On a new simulator the library may still be taking in the photo the
+        // first time the picker opens.
+        XCTAssertTrue(photo.waitForExistence(timeout: 45), "Test photo not found in the picker")
         let done = app.buttons["Done"]
         // The picker runs in another process, so its cells report as not hittable;
         // tapping their position on screen works. It can also ignore a tap while
