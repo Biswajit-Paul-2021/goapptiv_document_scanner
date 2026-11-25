@@ -160,6 +160,56 @@ if (Platform.isAndroid) {
 
 ```
 
+### Recovering scans after Android kills the app
+
+On low-memory devices Android may kill the app while the scanner is open. When
+the user finishes scanning, the app restarts, and the `scanDocument()` call
+that was waiting can no longer complete. The plugin keeps the finished scan and
+delivers it through `recoveredScanResults` instead. Listen to it once the app
+has started; a scan stored before you listen is delivered as soon as you do.
+
+```dart
+late final StreamSubscription<DocumentScanningResult> recoveredScans;
+
+@override
+void initState() {
+  super.initState();
+  recoveredScans = goapptivDocumentScanner.recoveredScanResults.listen((result) {
+    // Same result as scanDocument() would have returned.
+    log(result.toString());
+  });
+}
+
+@override
+void dispose() {
+  recoveredScans.cancel();
+  super.dispose();
+}
+```
+
+A recovered scan has lost the context it was started from: the screen, bottom
+sheet or list item that asked for it. Pass a `tag` when scanning to know what it
+was for. The tag is saved with the scan and comes back as `result.tag`.
+
+```dart
+await goapptivDocumentScanner.scanDocument(options, tag: 'customer-proof:$customerId');
+
+goapptivDocumentScanner.recoveredScanResults.listen((result) {
+  final tag = result.tag;
+  if (tag != null && tag.startsWith('customer-proof:')) {
+    uploadProof(tag.substring('customer-proof:'.length), result.images.first);
+  }
+});
+```
+
+Listen in one place that is always on screen after the app restarts, such as
+the screen hosting the bottom navigation bar. Don't listen inside list items or
+bottom sheets: they may not be rebuilt, and each scan is delivered only to the
+listeners that exist when it arrives.
+
+To also return the user to the screen they were on, enable Flutter state
+restoration, e.g. `MaterialApp.router(restorationScopeId: 'app', ...)`.
+
 ## Authors
 
 - [@BiswajitP](https://github.com/Biswajit-Paul-2021)

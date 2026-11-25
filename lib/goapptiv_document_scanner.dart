@@ -25,7 +25,27 @@ class GoapptivDocumentScanner {
         .getPictureFromGallery(letUserCropImage: letUserCropImage);
   }
 
-  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options) {
-    return GoapptivDocumentScannerPlatform.instance.scanDocument(options);
+  /// Opens the document scanner and returns the scan.
+  ///
+  /// [tag] is any string you choose, such as a record id. It comes back as
+  /// [DocumentScanningResult.tag], including on scans delivered through
+  /// [recoveredScanResults], so you can tell what a recovered scan was for.
+  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options,
+      {String? tag}) {
+    return GoapptivDocumentScannerPlatform.instance
+        .scanDocument(options, tag: tag);
   }
+
+  /// Scans that the user finished after Android had killed the app.
+  ///
+  /// On low-memory devices Android may kill the app while the scanner is open.
+  /// The [scanDocument] call that was waiting for the scan disappears with the
+  /// app, so it can never complete. The plugin keeps the finished scan on disk
+  /// instead and emits it here once the app runs again, whether that happens
+  /// before or after you start listening. Each scan is emitted once.
+  ///
+  /// Listen once the app has started, e.g. in `initState` of the screen that
+  /// shows scans. Android only; on other platforms nothing is ever emitted.
+  Stream<DocumentScanningResult> get recoveredScanResults =>
+      GoapptivDocumentScannerPlatform.instance.recoveredScanResults;
 }

@@ -35,11 +35,16 @@ abstract class GoapptivDocumentScannerPlatform extends PlatformInterface {
         'getPictureFromGallery() has not been implemented.');
   }
 
-  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options) {
+  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options,
+      {String? tag}) {
     throw UnimplementedError('scanDocument() has not been implemented.');
   }
 
   Future<void> closeScanner() {
     throw UnimplementedError('closeScanner() has not been implemented.');
+  }
+
+  Stream<DocumentScanningResult> get recoveredScanResults {
+    throw UnimplementedError('recoveredScanResults has not been implemented.');
   }
 }

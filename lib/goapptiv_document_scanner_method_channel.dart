@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -28,6 +29,8 @@ class MethodChannelGoapptivDocumentScanner
   String? _activeScannerId;
 
   static int _scannerIdCounter = 0;
+
+  StreamController<DocumentScanningResult>? _recoveredScanResults;
 
   @override
   Future<String?> getPicture({bool letUserCropImage = true}) async {
@@ -66,8 +69,8 @@ class MethodChannelGoapptivDocumentScanner
   }
 
   @override
-  Future<DocumentScanningResult> scanDocument(
-      DocumentScannerOptions options) async {
+  Future<DocumentScanningResult> scanDocument(DocumentScannerOptions options,
+      {String? tag}) async {
     // Release the scanner kept for the previous scan so its options cannot
     // leak into this one.
     await closeScanner();
@@ -81,6 +84,7 @@ class MethodChannelGoapptivDocumentScanner
             'vision#startDocumentScanner', <String, dynamic>{
       'options': options.toJson(),
       'id': scannerId,
+      'tag': tag,
     });
     return DocumentScanningResult.fromJson(results);
   }
@@ -92,5 +96,51 @@ class MethodChannelGoapptivDocumentScanner
     _activeScannerId = null;
     await methodChannel
         .invokeMethod<void>('vision#closeDocumentScanner', {'id': scannerId});
+  }
+
+  @override
+  Stream<DocumentScanningResult> get recoveredScanResults {
+    return (_recoveredScanResults ??=
+            StreamController<DocumentScanningResult>.broadcast(
+      onListen: () {
+        // Registered on first listen rather than in the constructor, because
+        // the platform instance can be created before the Flutter binding.
+        methodChannel.setMethodCallHandler(_handleNativeCall);
+        // Collect a scan that was stored before anyone was listening.
+        _deliverRecoveredScanResult();
+      },
+    ))
+        .stream;
+  }
+
+  Future<dynamic> _handleNativeCall(MethodCall call) async {
+    switch (call.method) {
+      case 'vision#lostScanResultAvailable':
+        await _deliverRecoveredScanResult();
+        return null;
+      default:
+        throw MissingPluginException();
+    }
+  }
+
+  /// Asks the native side for its stored scan, if any, and emits it.
+  ///
+  /// Native code hands a stored scan out only once, so the listen-time check
+  /// and the native notification cannot both emit the same scan.
+  Future<void> _deliverRecoveredScanResult() async {
+    final controller = _recoveredScanResults;
+    // Without a listener the scan stays stored for the next listener.
+    if (controller == null || !controller.hasListener) return;
+    try {
+      final results = await methodChannel
+          .invokeMapMethod<dynamic, dynamic>('vision#takeLostScanResult');
+      if (results != null) {
+        controller.add(DocumentScanningResult.fromJson(results));
+      }
+    } on MissingPluginException {
+      // Platforms other than Android do not store lost scans.
+    } catch (error, stackTrace) {
+      controller.addError(error, stackTrace);
+    }
   }
 }
