@@ -5,10 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:goapptiv_document_scanner/src/document_scanner_options.dart';
 import 'package:goapptiv_document_scanner/src/document_scanning_result.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'goapptiv_document_scanner_platform_interface.dart';
 
+@Deprecated('No longer thrown. On iOS, refused camera access is reported as a '
+    'PlatformException with the message "Camera access was denied".')
 const String permissionDenied = "PERMISSION_NOT_AVAILABLE";
 
 /// An implementation of [GoapptivDocumentScannerPlatform] that uses method channels.
@@ -38,12 +39,8 @@ class MethodChannelGoapptivDocumentScanner
       throw Exception(
           "getPicture() is not supported on Android. Use scanDocument() instead.");
     }
-    List<Permission> permissions = [Permission.camera];
-    Map<Permission, PermissionStatus> statuses = await permissions.request();
-    if (statuses.containsValue(PermissionStatus.denied) ||
-        statuses.containsValue(PermissionStatus.permanentlyDenied)) {
-      throw Exception(permissionDenied);
-    }
+    // The plugin's iOS code asks for camera access itself, and reports a
+    // refusal as a PlatformException ("Camera access was denied").
     final String? filePath = await methodChannel.invokeMethod("getPicture");
     return filePath?.split('file://')[1];
   }
@@ -54,15 +51,8 @@ class MethodChannelGoapptivDocumentScanner
       throw Exception(
           "getPictureFromGallery() is not supported on Android. Use scanDocument() instead.");
     }
-    List<Permission> permissions = [];
-    if (Platform.isIOS) {
-      permissions.add(Permission.photos);
-      Map<Permission, PermissionStatus> statuses = await permissions.request();
-      if (statuses.containsValue(PermissionStatus.denied) ||
-          statuses.containsValue(PermissionStatus.permanentlyDenied)) {
-        throw Exception(permissionDenied);
-      }
-    }
+    // No photo library permission is needed: the system photo picker runs
+    // outside the app and hands over only the photo the user picks.
     final String? filePath =
         await methodChannel.invokeMethod("getPictureFromGallery");
     return filePath?.split('file://')[1];

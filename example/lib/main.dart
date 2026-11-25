@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -79,7 +78,7 @@ class _MyAppState extends State<MyApp> {
                           letUserCropImage: true,
                         );
                         if (imagePath != null) {
-                          log(imagePath);
+                          print(imagePath);
                           imageFile = File(imagePath);
                           setState(() {});
                         }
@@ -117,7 +116,7 @@ class _MyAppState extends State<MyApp> {
                           letUserCropImage: true,
                         );
                         if (imagePath != null) {
-                          log(imagePath);
+                          print(imagePath);
                           imageFile = File(imagePath);
                           setState(() {});
                         }

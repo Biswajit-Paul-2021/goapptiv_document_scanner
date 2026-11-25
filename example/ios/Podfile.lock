@@ -1,6 +1,4 @@
 PODS:
-  - device_info_plus (0.0.1):
-    - Flutter
   - Flutter (1.0.0)
   - goapptiv_document_scanner (2.0.0):
     - Flutter
@@ -8,14 +6,11 @@ PODS:
     - Flutter
 
 DEPENDENCIES:
-  - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
   - Flutter (from `Flutter`)
   - goapptiv_document_scanner (from `.symlinks/plugins/goapptiv_document_scanner/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
 
 EXTERNAL SOURCES:
-  device_info_plus:
-    :path: ".symlinks/plugins/device_info_plus/ios"
   Flutter:
     :path: Flutter
   goapptiv_document_scanner:
@@ -24,11 +19,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
 
 SPEC CHECKSUMS:
-  device_info_plus: bf2e3232933866d73fe290f2942f2156cdd10342
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   goapptiv_document_scanner: 0e408e21794864bcffe3889af81cd2bda768b8e4
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
 
-PODFILE CHECKSUM: 81937edc7d11e66fd2c21bfe8be8856da1c23d6a
+PODFILE CHECKSUM: d4be72771ea4f06efb8be68ecd0bc46d1b8eecf5
 
 COCOAPODS: 1.16.2

@@ -2,17 +2,18 @@
 # Runs the iOS gallery-flow UI tests on a booted simulator, then checks the
 # crop each test saved: its shape and where the photo's red marker ended up.
 #
-# Usage: example/ios/RunnerUITests/run_gallery_tests.sh <simulator-udid>
+# Usage: example/ios/RunnerUITests/run_gallery_tests.sh <simulator-udid> [build settings...]
+# Extra arguments go to xcodebuild, e.g. FLUTTER_ROOT=~/fvm/versions/stable to
+# build with a Flutter SDK other than the one in ios/Flutter/Generated.xcconfig.
 set -uo pipefail
 
-SIM="${1:?usage: $0 <simulator-udid>}"
+SIM="${1:?usage: $0 <simulator-udid> [build settings...]}"
+shift
 HERE="$(cd "$(dirname "$0")" && pwd)"
 IOS_DIR="$(dirname "$HERE")"
 WORK="$(mktemp -d)"
-APP_ID=com.example.example
-RUNNER_ID=com.example.example.RunnerUITests.xctrunner
 XCODEBUILD=(xcodebuild -workspace "$IOS_DIR/Runner.xcworkspace" -scheme Runner
-            -destination "id=$SIM" -derivedDataPath "$WORK/DerivedData")
+            -destination "id=$SIM" -derivedDataPath "$WORK/DerivedData" "$@")
 failures=0
 
 echo "Work folder: $WORK"
@@ -21,6 +22,10 @@ xcrun simctl addmedia "$SIM" "$WORK/document.jpg" || exit 1
 swiftc -O "$HERE/tools/analyze_crop.swift" -o "$WORK/analyze_crop" || exit 1
 echo "Building app and tests..."
 "${XCODEBUILD[@]}" build-for-testing > "$WORK/build.log" 2>&1 || { echo "Build failed: $WORK/build.log"; exit 1; }
+# Read from the builds, so the script keeps working if the bundle IDs change.
+PRODUCTS="$WORK/DerivedData/Build/Products/Debug-iphonesimulator"
+APP_ID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$PRODUCTS/Runner.app/Info.plist")
+RUNNER_ID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$PRODUCTS/RunnerUITests-Runner.app/Info.plist")
 
 # Saved crops by file name; the app's data folder moves each time it is reinstalled.
 crops() {
@@ -70,6 +75,7 @@ run_test test2_pickRotateDone     landscape-marker-top-right
 run_test test3_pickDragCornerDone marker-cut-off
 run_test test4_cancelInPicker     no-crop
 run_test test5_cancelInEditor     no-crop
+run_test test6_pickDragTopEdgeDone marker-cut-off
 
 # Screenshot of the Flutter app showing the first test's result.
 runner_data=$(xcrun simctl get_app_container "$SIM" "$RUNNER_ID" data 2>/dev/null) &&

@@ -50,6 +50,35 @@ final class GalleryFlowUITests: XCTestCase {
         assertBackInApp()
     }
 
+    func test6_pickDragTopEdgeDone() {
+        pickTestPhoto()
+        let topLeft = app.otherElements["corner-0"]
+        let topRight = app.otherElements["corner-1"]
+        let bottomLeft = app.otherElements["corner-3"]
+        let topEdge = app.otherElements["edge-0"]
+        XCTAssertTrue(topEdge.waitForExistence(timeout: 10), "Edge handles didn't appear")
+        let leftBefore = topLeft.frame.center
+        let rightBefore = topRight.frame.center
+        // 40% of the way down cuts off the marker near the top left.
+        let distance = (bottomLeft.frame.center.y - leftBefore.y) * 0.4
+        let start = topEdge.frame.center
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        // Also 30 points sideways, which a top edge must ignore. The finger stays
+        // down at the end so the magnifier can be seen on screen.
+        origin.withOffset(CGVector(dx: start.x, dy: start.y))
+            .press(forDuration: 0.3,
+                   thenDragTo: origin.withOffset(CGVector(dx: start.x + 30, dy: start.y + distance)),
+                   withVelocity: .default, thenHoldForDuration: 2)
+        for (corner, before, name) in [(topLeft, leftBefore, "Top-left"), (topRight, rightBefore, "Top-right")] {
+            let after = corner.frame.center
+            XCTAssertEqual(after.y - before.y, distance, accuracy: 2, "\(name) corner didn't move down with the edge")
+            XCTAssertEqual(after.x, before.x, accuracy: 1, "\(name) corner moved sideways")
+        }
+        XCTAssertFalse(app.otherElements["magnifier"].exists, "Magnifier still showing after the drag")
+        tapDone()
+        assertBackInApp()
+    }
+
     func test4_cancelInPicker() {
         openGallery()
         let cancel = app.buttons["Cancel"]
@@ -78,11 +107,16 @@ final class GalleryFlowUITests: XCTestCase {
         // The test photo is dated 25 November, which the picker puts in its label.
         let photo = app.images.matching(NSPredicate(format: "label CONTAINS '25 November'")).firstMatch
         XCTAssertTrue(photo.waitForExistence(timeout: 15), "Test photo not found in the picker")
-        // The picker runs in another process, so its cells report as not hittable;
-        // tapping their position on screen works.
-        photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let done = app.buttons["Done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 15), "Corner editor didn't open")
+        // The picker runs in another process, so its cells report as not hittable;
+        // tapping their position on screen works. It can also ignore a tap while
+        // it is still settling, notably the first time it opens after install, so
+        // tap again while the editor hasn't opened.
+        for _ in 0..<3 where !done.exists {
+            photo.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            if done.waitForExistence(timeout: 5) { break }
+        }
+        XCTAssertTrue(done.exists, "Corner editor didn't open")
         // Done is enabled once the corners have been found.
         let enabled = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: done)
         wait(for: [enabled], timeout: 15)
