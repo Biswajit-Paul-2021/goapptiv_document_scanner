@@ -38,15 +38,8 @@ class MethodChannelGoapptivDocumentScanner
 
   @override
   Future<String?> getPictureFromGallery({bool letUserCropImage = true}) async {
-    List<Permission> permissions = [];
-    if (Platform.isIOS) {
-      permissions.add(Permission.mediaLibrary);
-      Map<Permission, PermissionStatus> statuses = await permissions.request();
-      if (statuses.containsValue(PermissionStatus.denied)) {
-        throw Exception(permissionDenied);
-      }
-    }
-
+    // No photo library permission is needed: on iOS the system photo picker
+    // runs outside the app and hands over only the photo the user picks.
     if (Platform.isAndroid) {
       final List<dynamic> pictures = await methodChannel.invokeMethod(
         'getPictureFromGallery',

@@ -1,51 +1,36 @@
-
+import Flutter
 import Foundation
-import WeScan
+import UIKit
 
 class Utils {
-    
-    static var channelName:String = "goapptiv_document_scanner"
-    
-    static func getScannedFile(results: ImageScannerResults) -> String? {
-        var path: String?
-        if(results.doesUserPreferEnhancedScan && results.enhancedScan != nil){
-            path = saveImage(image: results.enhancedScan!.image)
-            return path
-        }
-        path = saveImage(image: results.croppedScan.image)
-        return path
+
+    static let channelName = "goapptiv_document_scanner"
+
+    /// Same error code as the Android side.
+    static func error(_ message: String) -> FlutterError {
+        FlutterError(code: "DocumentScanner", message: message, details: nil)
     }
 
-    static private func saveImage(image: UIImage) -> String? {
-        
-        guard let documentsDirectory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first else { return nil }
-        
-        let fileName = uniqueFileNameWithExtention(fileExtension: "jpg")
-        let fileURL = documentsDirectory.appendingPathComponent(fileName)
-        guard let data = image.jpegData(compressionQuality: 1) else { return nil }
-
+    /// Writes the image as a JPEG and returns its `file://` URL, which the Dart
+    /// side turns into a path. Returns nil if the image could not be saved.
+    static func saveImage(_ image: UIImage) -> String? {
+        guard let directory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first,
+              let data = image.jpegData(compressionQuality: 1) else {
+            return nil
+        }
+        let fileURL = directory.appendingPathComponent(uniqueFileName(fileExtension: "jpg"))
         do {
             try data.write(to: fileURL)
             return fileURL.absoluteString
-        } catch let error {
+        } catch {
             print("error saving file with error", error)
             return nil
         }
-        
     }
 
-
-    static private func uniqueFileNameWithExtention(fileExtension: String) -> String {
-        let uniqueString: String = ProcessInfo.processInfo.globallyUniqueString
+    private static func uniqueFileName(fileExtension: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMddhhmmsss"
-        let dateString: String = formatter.string(from: Date())
-        let uniqueName: String = "\(uniqueString)_\(dateString)"
-        if fileExtension.count > 0 {
-            let fileName: String = "\(uniqueName).\(fileExtension)"
-            return fileName
-        }
-        
-        return uniqueName
+        return "\(ProcessInfo.processInfo.globallyUniqueString)_\(formatter.string(from: Date())).\(fileExtension)"
     }
 }
