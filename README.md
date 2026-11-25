@@ -69,6 +69,17 @@ WeScan has been removed. Delete this line from your app's `ios/Podfile`, then ru
 pod 'WeScan', :path => '.symlinks/plugins/goapptiv_document_scanner/ios/WeScan-3.0.0'
 ```
 
+=> like this below:
+
+```podspec
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+  pod 'WeScan', :path => '.symlinks/plugins/goapptiv_document_scanner/ios/WeScan-3.0.0'
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+```
+
 Add below permission to the `ios/Runner/Info.plist`:
 
 - one with the key `Privacy - Camera Usage Description` and a usage description.
@@ -82,11 +93,11 @@ Or in text format add the key:
 
 ### Android
 
-The plugin code is written in kotlin 1.7.10 so the same has to be set to the android project of yours for compilation.
-Change the kotlin_version to 1.7.10 in your `android/build.gradle` file.
+The plugin code is written in kotlin 2.1.20 so the same has to be set to the android project of yours for compilation.
+Change the kotlin_version to 2.1.20 in your `android/build.gradle` file.
 
 ```
-ext.kotlin_version = '2.1.20'
+ext.kotlin_version = '2.3.20'
 ```
 
 Change the minimum Android SDK version to 21 (or higher) in your `android/app/build.gradle` file.
@@ -116,20 +127,37 @@ import 'package:goapptiv_document_scanner/goapptiv_document_scanner.dart';
 ```
 
 ```dart
-    // Use below code for taking image from camera.
-try {
-    //Make sure to await the call to GetPicture.
-    final imagePath = await GoapptivDocumentScanner.getPicture();
-} catch (e) {
+
+// Only require for Android to close the scanner for releasing the resources
+final GoapptivDocumentScanner goapptivDocumentScanner =
+      GoapptivDocumentScanner();
+
+if (Platform.isAndroid) {
+  final options = DocumentScannerOptions(
+    documentFormat: DocumentFormat.jpeg,
+    isGalleryImport: true,
+    mode: ScannerMode.baseMode,
+  );
+  try {
+    final result = await goapptivDocumentScanner?.scanDocument(options);
+    log(result.toString());
+  } on Exception catch (e) {
+      print(e);
+  }
+} else {
+  try {
+    final imagePath =
+    await GoapptivDocumentScanner.getPicture();
+    if (imagePath != null) {
+      log(imagePath);
+      imageFile = File(imagePath);
+      setState(() {});
+    }
+  } on Exception catch (e) {
     print(e);
+  }
 }
-// Use below code for selecting directly from the gallery.
-try {
-    //Make sure to await the call to getPictureFromGallery.
-    final imagePath = await GoapptivDocumentScanner.getPictureFromGallery();
-} catch (e) {
-    print(e);
-}
+
 ```
 
 ## Authors

@@ -2,5 +2,5 @@
   "java.configuration.updateBuildConfiguration": "interactive",
   "C_Cpp.errorSquiggles": "disabled",
   "workbench.colorTheme": "Best Themes - One Monokai",
-  "dart.flutterSdkPath": ".fvm/versions/3.38.7"
+  "dart.flutterSdkPath": ".fvm/versions/stable"
 }
