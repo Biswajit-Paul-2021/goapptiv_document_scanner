@@ -71,14 +71,9 @@ pod 'WeScan', :path => '.symlinks/plugins/goapptiv_document_scanner/ios/WeScan-3
 
 ### Android
 
-The plugin code is written in kotlin 2.1.20 so the same has to be set to the android project of yours for compilation.
-Change the kotlin_version to 2.1.20 in your `android/build.gradle` file.
+The plugin's Android code is written in Java, so it needs no particular Kotlin version in your app and works with Android Gradle Plugin 8 and 9.
 
-```
-ext.kotlin_version = '2.3.20'
-```
-
-Change the minimum Android SDK version to 21 (or higher) in your `android/app/build.gradle` file.
+Change the minimum Android SDK version to 24 (or higher) in your `android/app/build.gradle` file.
 
 ```
 minSdkVersion 24
